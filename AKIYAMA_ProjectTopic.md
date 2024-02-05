@@ -1,0 +1,17 @@
+-   General topic of interest in relation to the Oregon Bee Atlas data (e.g., patterns of diversity, bee diets, sampling bias)
+
+    -   Land management
+
+    -   Bee / vegetation type interactions
+
+-   Potential questions within that topic area
+
+    What plants will be the best for bees on specific plots of land?
+
+    What types of bees are served by any specific vegetation type, and how can their community be well supported?
+
+-   Potential additional datasets within that topic area (e.g.,specify relevant government databases, academic data repositories, etc
+
+Oregon Spatial Data Library
+
+OregonFlora
