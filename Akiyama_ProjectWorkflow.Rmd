@@ -8,26 +8,32 @@ date: "2024-02-20"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Proposed workflow:
+**Proposed workflow:**
 
-Prompt user for either coordinates(in specific format) or ecosystem type
+-   Prompt user for either coordinates(in specific format) or ecosystem type
 
-use Terrestrial Ecological Systems of the United States raster data for oregon <https://www.natureserve.org/products/terrestrial-ecological-systems-united-states>
+-   use Terrestrial Ecological Systems of the United States raster data for oregon <https://www.natureserve.org/products/terrestrial-ecological-systems-united-states>
 
-If coordinates, use raster map to extract ecosystem data from around those coordinates. Get top 3 ecosystems from a buffer of some size
+-   If coordinates, use raster map to extract ecosystem data from around those coordinates. (maybe get more than one)
 
-Use another data set from Nature Serve that maybe matches associated taxa in OBA data with an ecosystem. Might have to do some of this manually:
+-   Use another data set from Nature Serve that maybe matches associated taxa in OBA data with an ecosystem. Might have to do some of this manually:
 
-helpful page with data downloads: <https://www.natureserve.org/products/ecosystem-classification>
+-   helpful page with data downloads: <https://www.natureserve.org/products/ecosystem-classification>
 
-can make a master dataframe here with ecosystems in one column and taxas in another column
+-   can make a master dataframe here with ecosystems in one column and taxas in another column
 
-with ecosystems from desired area, pull smaller dataframe from OBA data with all associated taxas that grow well in the respective ecosystem.
+-   with ecosystems from desired area, pull smaller dataframe from OBA data with all associated taxas that grow well in the respective ecosystem
 
-Prompt user for either bee species or genus of interest
+-   Diversity & abundance measurements
 
-If there is not species of interest, list top 5 or 10 associated taxas with the most recorded bee interactions from that ecosystem.
+-   Prompt user for either bee species or genus of interest
 
-take genus/species of interest and filter data to get top 5 or 10 taxas associated with that species
+-   Return network plot and bar graphs and where bees are :: and connect bees and plants within ecosystem
 
-Can also test for taxas that have the most diverse associated bee taxa. If needed, can use simulation data to derive a measure of "robust-ness" as to return a plant system that makes for a resilient ecosystem.
+-   If there is not species of interest, list top 5 or 10 associated taxas with the most recorded bee interactions from that ecosystem. (bar plot)
+
+-   take genus/species of interest and filter data to get top 5 or 10 taxas associated with that species
+
+-   Can also test for taxas that have the most diverse associated bee taxa. If needed, can use simulation data to derive a measure of "robust-ness" as to return a plant system that makes for a resilient ecosystem.
+
+-   WRiting a gui is outside the scope of R\`
