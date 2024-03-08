@@ -11,12 +11,65 @@ knitr::opts_chunk$set(echo = TRUE)
 # Packages
 
 ```{r}
-#library()
+library(terra)
+library(ggplot2)
+library(dplyr)
+library(sf)
+library(tidyterra)
+library(sp)
+
+?sp
 ```
 
-#  Data Cleaning
+# Data Cleaning
 
 ```{r}
-OBA<-read.csv("OBA_2018-2023.csv")
+OBAraw<-read.csv("OBA_2018-2023.csv")
+OBA<-subset(OBAraw, Dec..Long. != "" & Dec..Lat. != "")
+OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
+
 
 ```
+
+# Raster Setup:
+
+```{r}
+
+OBA_sf <- st_as_sf(OBA, coords = c("Dec..Long.", "Dec..Lat."),
+                                  crs = 4326)
+or <- map_data( "state","oregon") %>% 
+  dplyr::select(lon = long, lat, group, id = subregion)
+
+or_sf<-st_as_sf(or, coords=c("lon","lat"),, group=TRUE, crs=4326)
+ggplot()+
+  geom_sf(data=OBA_sf, color='yellow') 
+
+ggplot()+
+  geom_polygon(data=or, aes(x=lon,y=lat, group=group)) +
+  geom_sf(data=OBA_crop, color='yellow') 
+
+OBA_crop<-st_filter(OBA_sf,or_poly)
+df_to_SpatialPolygon(OBA, "group", c("lon", "lat"),crs=4326 )
+OBA_sf<-OBA_sf[or_sf]
+
+ext(or_sf)
+
+?st_as_sf
+
+or_poly <- or %>%
+  st_as_sf(coords=c("lon","lat"), crs=4326)%>%
+  summarise(geometry = st_combine(geometry)) %>%
+  st_cast("POLYGON")
+
+OBA_inoregon<-st_contains(or_poly, OBA_sf)
+O
+
+```
+
+# Input Coordinates:
+
+```{r}
+
+```
+
+# 
