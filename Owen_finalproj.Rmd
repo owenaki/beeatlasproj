@@ -17,24 +17,23 @@ library(dplyr)
 library(sf)
 library(tidyterra)
 library(sp)
-
-?sp
+library(ggspatial)
+library(exactextractr)
 ```
 
 # Data Cleaning
 
 ```{r}
-OBAraw<-read.csv("OBA_2018-2023.csv")
+OBAraw<-read.csv("Akiyama_ProjectData/OBA_2018-2023.csv")
 OBA<-subset(OBAraw, Dec..Long. != "" & Dec..Lat. != "")
 OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
 
 
 ```
 
-# Raster Setup:
+# Shapefile Setup:
 
 ```{r}
-
 OBA_sf <- st_as_sf(OBA, coords = c("Dec..Long.", "Dec..Lat."),
                                   crs = 4326)
 or <- map_data( "state","oregon") %>% 
@@ -48,13 +47,107 @@ or_poly <- or %>%
 OBA_crop<-st_filter(OBA_sf,or_poly)
 
 #possibly unecessary
-or_sf<-st_as_sf(or, coords=c("lon","lat"),, group=TRUE, crs=4326)
-ggplot()+
-  geom_sf(data=OBA_sf, color='yellow') 
+#or_sf<-st_as_sf(or, coords=c("lon","lat"),, group=TRUE, crs=4326)
 
 ggplot()+
   geom_polygon(data=or, aes(x=lon,y=lat, group=group)) +
   geom_sf(data=OBA_crop, color='yellow') 
+```
+
+# Raster Setup
+
+```{r}
+vegcover<-rast("Akiyama_ProjectData/gaplf2011lc_v30_or/gaplf2011lc_v30_or.tif")
+#attributes
+vegcover_at<-read.delim("Akiyama_ProjectData/gaplf2011lc_v30_or/GAP_LANDFIRE_National_Terrestrial_Ecosystems_2011_Attributes.txt")
+
+### get a list of the numbers associated with all the land types in this raster (put this in # because converting to df took 20 min)
+
+#vegcover_df <- as.data.frame(vegcover, xy = TRUE)
+#head(vegcover_df)
+
+#unique_vegcover<-unique(vegcover_df$gaplf2011lc_v30_or)
+#save(unique_vegcover, file = "unique_vegcover.rda")
+load("Akiyama_ProjectData/unique_vegcover.rda")
+
+### get the categorical land types associated with those numbers
+landtype<- matrix(0,161,1)
+for (x in 1:161) {
+  
+  landnum<-unique_vegcover[x]
+ 
+  landtype[x,1]<-vegcover_at[which(vegcover_at$Value == landnum),19]
+  
+}
+
+
+#associate values with categories within the raster
+fromto <- as.matrix(data.frame(from = unique_vegcover , to = landtype))
+fromto_df<-as.data.frame(fromto)
+fromto_df$from<-as.numeric(fromto_df$from)
+
+levels(vegcover)<-fromto_df
+
+#reproj vegcover
+vegcover_reproj<-project(vegcover, crs(OBA_crop))
+
+
+
+```
+
+# Raster Graph
+
+```{r}
+## Regular R raster plot:
+
+#plot(vegcover,type= "classes",legend=TRUE,plg=list(
+#                title = "Terrestrial Ecosystem Type",
+#                title.cex = 1, 
+#                cex = 0.14), fun=\() lines(or))
+
+
+##THIS GRAPH LOOKS HORRIBLE
+pdf("vegcoverplot.pdf")
+
+
+vegcoverplot<-ggplot()+
+  geom_spatraster(data=vegcover_reproj) +
+  scale_fill_viridis_d(name="Ecosystem \n Types") +
+  geom_path(data=or, aes(x=lon,y=lat, group=group)) +
+  geom_sf(data=OBA_crop, color="yellow2") +
+  ggtitle("OBA Samples in Vegetation Cover Types") +
+  annotation_scale(height = unit(3, "cm"),   text_cex = 3) +
+  labs(color='Associated \n Plant \n Taxas',caption = "Figure 1: points represent instances of Halictus rubicundus caught from 2018-2019. The species has a wide distribution accross many ecosystems and plants.") +
+  theme(plot.title = element_text(size=70),
+        legend.position= "bottom",
+        legend.text = element_text(size=30),
+        legend.title = element_text(size=50),
+        plot.caption = element_text(size=50),
+        plot.caption.position= "plot"
+        )
+print(vegcoverplot)
+
+ggsave(
+  "vegcoverplot.pdf",
+  plot = last_plot(),
+  device = NULL,
+  path = NULL,
+  scale = 1,
+  width = 130,
+  height = 48,
+  units = c("in", "cm", "mm", "px"),
+  dpi = 300,
+  limitsize = FALSE,
+  bg = NULL)
+         
+```
+
+# Raster Operations/Function
+
+```{r}
+#vegbee_master<- extract(x=vegcover_reproj, y=st_buffer(OBA_crop, dist=1), raw=FALSE)
+greasewood <- vegcover_reproj == "Inter-Mountain Basins Greasewood Flat"
+greasy_bees<-exact_extract(x=greasewood, y=st_buffer(OBA_crop, dist=500), raw=FALSE)
 
 ```
 
