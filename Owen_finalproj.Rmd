@@ -19,6 +19,9 @@ library(tidyterra)
 library(sp)
 library(ggspatial)
 library(exactextractr)
+library(igraph)
+library(networkD3)
+library(tidyr)
 ```
 
 # Data Cleaning
@@ -27,6 +30,7 @@ library(exactextractr)
 OBAraw<-read.csv("Akiyama_ProjectData/OBA_2018-2023.csv")
 OBA<-subset(OBAraw, Dec..Long. != "" & Dec..Lat. != "")
 OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
+OBA<-unite(OBA, col="gspecies", c('Genus', 'Species'), sep=' ')
 
 
 ```
@@ -145,11 +149,39 @@ ggsave(
 # Raster Operations/Function
 
 ```{r}
+#Extract vegcover types at each bee sample
 vegbee_master<- extract(x=vegcover_reproj, y=OBA_crop)
+#put into specific vegetation type dataframe
+OBA_greasewood<-OBA_crop[which(vegbee_master$to == "Inter-Mountain Basins Greasewood Flat"),]
 
-greasewood<-subset(vegbee_master, to=="Inter-Mountain Basins Greasewood Flat")
+#return a graph with 
 
-OBA_crop[which(vegbee_master$to == "Inter-Mountain Basins Greasewood Flat"),]
+#top genuses
+genuslist<-OBA_greasewood %>% group_by(Genus) %>% tally()
+genuslist<-random[order(genuslist$n, decreasing = TRUE),1:2]
+
+#top species
+
+
+#top 10 bees of interest
+
+#top 10 plants of interest
+```
+
+# Graph Experiments
+
+```{r}
+?unite()
+OBA_Net<-subset(OBA_greasewood,select= c(specificEpithet, associatedTaxa))
+
+megaNetvert<-distinct(gather(OBA_megaNet))
+megaNetvert<-megaNetvert[,c(2,1)]
+ 
+ megaNet <- graph_from_data_frame(OBA_megaNet, directed=FALSE, vertices=megaNetvert)
+
+plot(megaNet, vertex.size=4,
+     vertex.label.cex=0.2, vertex.color=c( "green", "yellow")[1+as.numeric(V(megaNet)$key =="specificEpithet")],vertex.label.color="blue",rescale=TRUE)
+
 ```
 
 # Input Coordinates:
