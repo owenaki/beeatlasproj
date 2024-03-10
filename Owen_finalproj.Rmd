@@ -145,10 +145,11 @@ ggsave(
 # Raster Operations/Function
 
 ```{r}
-#vegbee_master<- extract(x=vegcover_reproj, y=st_buffer(OBA_crop, dist=1), raw=FALSE)
-greasewood <- vegcover_reproj == "Inter-Mountain Basins Greasewood Flat"
-greasy_bees<-exact_extract(x=greasewood, y=st_buffer(OBA_crop, dist=500), raw=FALSE)
+vegbee_master<- extract(x=vegcover_reproj, y=OBA_crop)
 
+greasewood<-subset(vegbee_master, to=="Inter-Mountain Basins Greasewood Flat")
+
+OBA_crop[which(vegbee_master$to == "Inter-Mountain Basins Greasewood Flat"),]
 ```
 
 # Input Coordinates:
