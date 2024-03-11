@@ -191,7 +191,13 @@ specieslist<-random[order(specieslist$n, decreasing = TRUE),1:2]
 plantlist<-OBA_greasewood %>% group_by(Associated.plant) %>% tally()
 plantlist<-random[order(specieslist$n, decreasing = TRUE),1:2]
 
-
+##Diversity Measure
+allplants<-as.data.frame(unique(OBA_greasewood$Associated.plant...genus..species))
+allplants$count = NA
+for (a in 1:length(allplants) {
+    oneplantsubset<-subset(OBA_greasewood, Associated.plant...genus..species == allplants[a])
+    allplants[a,2]length(unique(oneplantsubset$gspecies))
+}
 
 ```
 
