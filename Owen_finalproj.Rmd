@@ -22,6 +22,8 @@ library(exactextractr)
 library(igraph)
 library(networkD3)
 library(tidyr)
+library(ggalluvial)
+library(ggrepel)
 ```
 
 # Data Cleaning
@@ -30,7 +32,9 @@ library(tidyr)
 OBAraw<-read.csv("Akiyama_ProjectData/OBA_2018-2023.csv")
 OBA<-subset(OBAraw, Dec..Long. != "" & Dec..Lat. != "")
 OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
-OBA<-unite(OBA, col="gspecies", c('Genus', 'Species'), sep=' ')
+OBA<-subset(OBA, Genus!="" & Associated.plant...genus..species!= "")
+OBA<-unite(OBA, col="gspecies", c('Genus', 'Species'), sep=' ', remove=FALSE)
+
 
 
 ```
@@ -202,6 +206,25 @@ plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
 
 
 bipartite_projection(OBA_netgraph)
+
+
+## so lets take top 25
+
+
+png("greasyplot.pdf")
+
+greasyplot<-ggplot(data = OBA_greasewood,
+       aes(axis1 = Associated.plant...genus..species, axis2 = gspecies,)) +
+  geom_alluvium(aes(fill = Associated.plant...genus..species),show.legend = FALSE, ) +
+  geom_stratum() +
+  geom_label(stat = "stratum",
+            aes(label = after_stat(stratum)),check_overlap=TRUE, max.overlaps=21) +
+  scale_x_discrete(limits = c("Associated.plant...genus..species", "gspecies"),
+                   expand = c(0.15, 0.05)) +
+  theme_void()
+
+  ggsave('greasyplot.png', device = ragg::agg_png, 
+        width = unit(20, 'in'), height = unit(30, 'in'))
 ```
 
 # Input Coordinates:
