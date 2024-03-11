@@ -153,6 +153,18 @@ ggsave(
 # Raster Operations/Function
 
 ```{r}
+z<--118.436
+y<-42.777
+enter_coords <- function(y,z){
+   onecoord<-as.data.frame(matrix(c(y,z),nrow=1,ncol=2))
+   colnames(onecoord)<-c("lat","lon")
+   onecoord_sf <- st_as_sf(onecoord, coords = c("lon","lat"),
+                                  crs = 4326)
+   onevegtype<-terra::extract(x=vegcover_reproj, y=onecoord_sf)
+   OBA_onetype<-OBA_crop[which(vegbee_master$to == onevegtype[1,2]),]
+   return(OBA_onetype) }
+
+ 
 #Extract vegcover types at each bee sample
 vegbee_master<- terra::extract(x=vegcover_reproj, y=OBA_crop)
 #put into specific vegetation type dataframe
@@ -187,6 +199,36 @@ plantlist<-random[order(specieslist$n, decreasing = TRUE),1:2]
 
 ```{r}
 
+
+png("greasyplot.pdf")
+
+greasyplot<-ggplot(data = OBA_greasewood,
+       aes(axis1 = Associated.plant...genus..species, axis2 = gspecies,)) +
+  geom_alluvium(aes(fill = Associated.plant...genus..species),show.legend = FALSE, ) +
+  geom_stratum() +
+  geom_label(stat = "stratum",
+            aes(label = after_stat(stratum)),check_overlap=TRUE, max.overlaps=21) +
+  scale_x_discrete(limits = c("Associated.plant...genus..species", "gspecies"),
+                   expand = c(0.15, 0.05)) +
+  theme_void()
+
+  ggsave('greasyplot.png', device = ragg::agg_png, 
+        width = unit(20, 'in'), height = unit(30, 'in'))
+```
+
+# 
+
+```{r}
+
+```
+
+# 
+
+# Appendix
+
+### Unused igraph network code
+
+```{r}
 OBA_net<-subset(OBA_greasewood, select= c(gspecies, Associated.plant))
 OBA_net<-as.data.frame(OBA_net)
 OBA_net<-OBA_net[,1:2]
@@ -206,31 +248,4 @@ plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
 
 
 bipartite_projection(OBA_netgraph)
-
-
-## so lets take top 25
-
-
-png("greasyplot.pdf")
-
-greasyplot<-ggplot(data = OBA_greasewood,
-       aes(axis1 = Associated.plant...genus..species, axis2 = gspecies,)) +
-  geom_alluvium(aes(fill = Associated.plant...genus..species),show.legend = FALSE, ) +
-  geom_stratum() +
-  geom_label(stat = "stratum",
-            aes(label = after_stat(stratum)),check_overlap=TRUE, max.overlaps=21) +
-  scale_x_discrete(limits = c("Associated.plant...genus..species", "gspecies"),
-                   expand = c(0.15, 0.05)) +
-  theme_void()
-
-  ggsave('greasyplot.png', device = ragg::agg_png, 
-        width = unit(20, 'in'), height = unit(30, 'in'))
 ```
-
-# Input Coordinates:
-
-```{r}
-
-```
-
-# 
