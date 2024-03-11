@@ -150,38 +150,58 @@ ggsave(
 
 ```{r}
 #Extract vegcover types at each bee sample
-vegbee_master<- extract(x=vegcover_reproj, y=OBA_crop)
+vegbee_master<- terra::extract(x=vegcover_reproj, y=OBA_crop)
 #put into specific vegetation type dataframe
 OBA_greasewood<-OBA_crop[which(vegbee_master$to == "Inter-Mountain Basins Greasewood Flat"),]
 
 #return a graph with 
 
-#top genuses
+#a function that doesn't work
+#toplist <- function(x){
+#    funclist<-OBA_greasewood %>% group_by(x) %>% tally()
+#   funclist<-random[order(funclist$n, decreasing = TRUE),1:2]
+#   return(funclist) }
+
+
+#top genuses:: I can't use a function for these repeats due to the piping
 genuslist<-OBA_greasewood %>% group_by(Genus) %>% tally()
 genuslist<-random[order(genuslist$n, decreasing = TRUE),1:2]
 
 #top species
+specieslist<-OBA_greasewood %>% group_by(gspecies) %>% tally()
+specieslist<-random[order(specieslist$n, decreasing = TRUE),1:2]
+
+#top plants
+plantlist<-OBA_greasewood %>% group_by(Associated.plant) %>% tally()
+plantlist<-random[order(specieslist$n, decreasing = TRUE),1:2]
 
 
-#top 10 bees of interest
 
-#top 10 plants of interest
 ```
 
 # Graph Experiments
 
 ```{r}
-?unite()
-OBA_Net<-subset(OBA_greasewood,select= c(specificEpithet, associatedTaxa))
 
-megaNetvert<-distinct(gather(OBA_megaNet))
-megaNetvert<-megaNetvert[,c(2,1)]
+OBA_net<-subset(OBA_greasewood, select= c(gspecies, Associated.plant))
+OBA_net<-as.data.frame(OBA_net)
+OBA_net<-OBA_net[,1:2]
+
+OBA_netvert<-distinct(gather(OBA_net))
+OBA_netvert<-OBA_netvert[,c(2,1)]
+OBA_netvert<-OBA_netvert$key ==
+  OBA_netvert['key'][OBA_netvert['key'] == 'gspecies']<- 'TRUE'
+
+
+OBA_netvert$type<-as.logical(ifelse(OBA_netvert$key == "gspecies","TRUE","FALSE"))
  
- megaNet <- graph_from_data_frame(OBA_megaNet, directed=FALSE, vertices=megaNetvert)
+OBA_netgraph <- graph_from_data_frame(OBA_net, directed=FALSE, vertices=OBA_netvert)
 
-plot(megaNet, vertex.size=4,
-     vertex.label.cex=0.2, vertex.color=c( "green", "yellow")[1+as.numeric(V(megaNet)$key =="specificEpithet")],vertex.label.color="blue",rescale=TRUE)
+plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
+     vertex.label.cex=0.1, hgap=5000, vgap= 20)
 
+
+bipartite_projection(OBA_netgraph)
 ```
 
 # Input Coordinates:
