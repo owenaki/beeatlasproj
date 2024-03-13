@@ -24,6 +24,7 @@ library(networkD3)
 library(tidyr)
 library(ggalluvial)
 library(ggrepel)
+library(stringr)
 ```
 
 # Data Cleaning
@@ -34,6 +35,7 @@ OBA<-subset(OBAraw, Dec..Long. != "" & Dec..Lat. != "")
 OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
 OBA<-subset(OBA, Genus!="" & Associated.plant...genus..species!= "" & Associated.plant...genus..species!= "NA")
 OBA<-unite(OBA, col="gspecies", c('Genus', 'Species'), sep=' ', remove=FALSE)
+OBA$plantresolution<-str_detect(OBA$Associated.plant...genus..species, pattern="\\w\\s\\w")
 
 
 
@@ -80,11 +82,11 @@ load("Akiyama_ProjectData/unique_vegcover.rda")
 
 ### get the categorical land types associated with those numbers
 landtype<- matrix(0,161,1)
-for (x in 1:161) {
+for (n in 1:161) {
   
-  landnum<-unique_vegcover[x]
+  landnum<-unique_vegcover[n]
  
-  landtype[x,1]<-vegcover_at[which(vegcover_at$Value == landnum),19]
+  landtype[n,1]<-vegcover_at[which(vegcover_at$Value == landnum),19]
   
 }
 
@@ -115,19 +117,15 @@ vegcover_reproj<-project(vegcover, crs(OBA_crop))
 
 
 ##THIS GRAPH LOOKS HORRIBLE
-pdf("vegcoverplot.pdf")
-
-
+pdf("vegcoverplot3.pdf")
 vegcoverplot<-ggplot()+
   geom_spatraster(data=vegcover_reproj) +
   scale_fill_viridis_d(name="Ecosystem \n Types") +
   geom_path(data=or, aes(x=lon,y=lat, group=group)) +
-  geom_sf(data=OBA_crop, color="yellow2") +
-  ggtitle("OBA Samples in Vegetation Cover Types") +
+  ggtitle("NatureServe Vegetation Cover in Oregon") +
   annotation_scale(height = unit(3, "cm"),   text_cex = 3) +
-  labs(color='Associated \n Plant \n Taxas',caption = "Figure 1: points represent instances of Halictus rubicundus caught from 2018-2019. The species has a wide distribution accross many ecosystems and plants.") +
   theme(plot.title = element_text(size=70),
-        legend.position= "bottom",
+        legend.position= "right",
         legend.text = element_text(size=30),
         legend.title = element_text(size=50),
         plot.caption = element_text(size=50),
@@ -136,7 +134,7 @@ vegcoverplot<-ggplot()+
 print(vegcoverplot)
 
 ggsave(
-  "vegcoverplot.pdf",
+  "vegcoverplot3.pdf",
   plot = last_plot(),
   device = NULL,
   path = NULL,
@@ -147,36 +145,37 @@ ggsave(
   dpi = 300,
   limitsize = FALSE,
   bg = NULL)
+
+
          
 ```
 
-# Raster Operations/Function
+# Input Coordinates
 
 ```{r}
-z<--118.436
-y<-42.777
-enter_coords <- function(y,z){
-   onecoord<-as.data.frame(matrix(c(y,z),nrow=1,ncol=2))
-   colnames(onecoord)<-c("lat","lon")
-   onecoord_sf <- st_as_sf(onecoord, coords = c("lon","lat"),
-                                  crs = 4326)
-   onevegtype<-terra::extract(x=vegcover_reproj, y=onecoord_sf)
-   OBA_onetype<-OBA_crop[which(vegbee_master$to == onevegtype[1,2]),]
-   return(OBA_onetype) }
+#longitude:
+x<--123.285
 
- 
-#Extract vegcover types at each bee sample
-vegbee_master<- terra::extract(x=vegcover_reproj, y=OBA_crop)
-#put into specific vegetation type dataframe
-OBA_greasewood<-OBA_crop[which(vegbee_master$to == "Inter-Mountain Basins Greasewood Flat"),]
+#latitude:
+y<-44.556
+```
 
-#return a graph with 
+# where function would start
 
-#a function that doesn't work
-#toplist <- function(x){
-#   funclist<-OBA_greasewood %>% group_by (x) %>% tally()
- # funclist<-random[order(funclist$n, decreasing = TRUE),1:2]
-#return(funclist) }
+```{r}
+
+onecoord<-as.data.frame(matrix(c(y,x),nrow=1,ncol=2)) 
+colnames(onecoord)<-c("lat","lon") 
+onecoord_sf <- st_as_sf(onecoord, coords = c("lon","lat"), crs = 4326) 
+onevegtype<-terra::extract(x=vegcover_reproj, y=onecoord_sf) 
+onevegtype<-as.data.frame(onevegtype)[1,2]
+OBA_onetype<-OBA_crop[which(vegbee_master$to == onevegtype),] 
+
+sprintf("This point is within %s vegetation cover",onevegtype)
+
+gsub(" ","+",onevegtype)
+browseURL("https://www.google.com/search?q=Developed,+Low+Intensity+site%3Ahttps%3A%2F%2Fexplorer.natureserve.org")
+#a function that doesn't work #toplist <- function(x){ # funclist<-OBA_greasewood %>% group_by (x) %>% tally() # funclist<-random[order(funclist$n, decreasing = TRUE),1:2] #return(funclist) }
 ```
 
 # Statistics & Graphs
@@ -308,4 +307,7 @@ plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
 
 
 bipartite_projection(OBA_netgraph)
+
+vegcover_greasewood<- vegcover_reproj =="Inter-Mountain Basins Greasewood Flat"
+plot(vegcover_greasewood)
 ```
