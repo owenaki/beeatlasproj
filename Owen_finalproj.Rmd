@@ -39,6 +39,7 @@ OBA$plantresolution<-str_detect(OBA$Associated.plant...genus..species, pattern="
 
 
 
+
 ```
 
 # Shapefile Setup:
@@ -160,7 +161,7 @@ x<--123.285
 y<-44.556
 ```
 
-# where function would start
+# What is the Vegetation Type?
 
 ```{r}
 
@@ -169,13 +170,21 @@ colnames(onecoord)<-c("lat","lon")
 onecoord_sf <- st_as_sf(onecoord, coords = c("lon","lat"), crs = 4326) 
 onevegtype<-terra::extract(x=vegcover_reproj, y=onecoord_sf) 
 onevegtype<-as.data.frame(onevegtype)[1,2]
-OBA_onetype<-OBA_crop[which(vegbee_master$to == onevegtype),] 
+OBA_onetype_sf<-OBA_crop[which(vegbee_master$to == onevegtype),] 
+OBA_onetype<-as.data.frame(OBA_onetype_sf)
 
 sprintf("This point is within %s vegetation cover",onevegtype)
 
-gsub(" ","+",onevegtype)
-browseURL("https://www.google.com/search?q=Developed,+Low+Intensity+site%3Ahttps%3A%2F%2Fexplorer.natureserve.org")
-#a function that doesn't work #toplist <- function(x){ # funclist<-OBA_greasewood %>% group_by (x) %>% tally() # funclist<-random[order(funclist$n, decreasing = TRUE),1:2] #return(funclist) }
+
+#a function that doesn't work #toplist <- function(x){ # funclist<-OBA_onetype %>% group_by (x) %>% tally() # funclist<-random[order(funclist$n, decreasing = TRUE),1:2] #return(funclist) }
+```
+
+# Get Vegetation Type Info
+
+```{r}
+URL<-gsub(" ","+",onevegtype)
+URL<-sprintf("https://www.google.com/search?q=%s+site%%3Ahttps%%3A%%2F%%2Fexplorer.natureserve.org",URL)
+browseURL(URL)
 ```
 
 # Statistics & Graphs
@@ -183,7 +192,7 @@ browseURL("https://www.google.com/search?q=Developed,+Low+Intensity+site%3Ahttps
 ## Bee genera of interest
 
 ```{r}
-genuslist<-OBA_greasewood %>% group_by(Genus) %>% tally()
+genuslist<-OBA_onetype %>% group_by(Genus) %>% tally()
 genuslist<-genuslist[order(genuslist$n, decreasing = TRUE),1:2]
 genuslist
 
@@ -203,8 +212,9 @@ ggplot(data =genuslist[1:10,], aes(x=reorder(Genus, -n), y=n, fill =Genus)) +
 ## Bee species of interest
 
 ```{r}
+subset(OBA_onetype, plantresolution == TRUE)
 
-specieslist<-OBA_greasewood %>% group_by(gspecies) %>% tally()
+specieslist<-OBA_onetype %>% group_by(gspecies) %>% tally()
 specieslist<-specieslist[order(specieslist$n, decreasing = TRUE),1:2]
 specieslist[1:25,]
 
@@ -222,7 +232,7 @@ ggplot(data =specieslist[1:25,], aes(x=reorder(gspecies, -n), y=n, fill =gspecie
 ## Most Abundant Associated Plant Species
 
 ```{r}
-plantlist<-OBA_greasewood %>% group_by(Associated.plant...genus..species) %>% tally()
+plantlist<-OBA_onetype %>% group_by(Associated.plant...genus..species) %>% tally()
 plantlist<-plantlist[order(plantlist$n, decreasing = TRUE),1:2]
 
 ggplot(data =plantlist[1:25,], aes(x=reorder(Associated.plant...genus..species, -n), y=n, fill =Associated.plant...genus..species)) +
@@ -239,11 +249,11 @@ ggplot(data =plantlist[1:25,], aes(x=reorder(Associated.plant...genus..species, 
 ## Most Diverse Associated Plant Species
 
 ```{r}
-allplants<-as.data.frame(unique(OBA_greasewood$Associated.plant...genus..species))
+allplants<-as.data.frame(unique(OBA_onetype$Associated.plant...genus..species))
 colnames(allplants)<-"plant"
 allplants$uniquebeespecies = NA
 for (a in 1:nrow(allplants)) {
-    oneplantsubset<-subset(OBA_greasewood, Associated.plant...genus..species == allplants[a,1])
+    oneplantsubset<-subset(OBA_onetype, Associated.plant...genus..species == allplants[a,1])
     allplants[a,2]<-length(unique(oneplantsubset$gspecies))
 }
 
@@ -265,7 +275,7 @@ ggplot(data =allplants[1:25,], aes(x=reorder(plant, -uniquebeespecies), y=unique
 
 pdf("greasyplot.pdf")
 
-greasyplot<-ggplot(data = OBA_greasewood,
+mybeenetworkplot<-ggplot(data = OBA_onetype,
        aes(axis1 = Associated.plant...genus..species, axis2 = gspecies,)) +
   geom_alluvium(aes(fill = Associated.plant...genus..species),show.legend = FALSE, ) +
   geom_stratum() +
@@ -274,10 +284,10 @@ greasyplot<-ggplot(data = OBA_greasewood,
   scale_x_discrete(limits = c("Associated.plant...genus..species", "gspecies"),
                    expand = c(0.15, 0.05)) +
   theme_void()
-greasyplot
+mybeenetworkplot
 
 
-  ggsave('greasyplot.pdf', 
+  ggsave('mybeenetworkplot.pdf', 
         width = unit(25, 'in'), height = unit(30, 'in'))
 ```
 
@@ -288,7 +298,7 @@ greasyplot
 ### Unused igraph network code
 
 ```{r}
-OBA_net<-subset(OBA_greasewood, select= c(gspecies, Associated.plant))
+OBA_net<-subset(OBA_onetype, select= c(gspecies, Associated.plant))
 OBA_net<-as.data.frame(OBA_net)
 OBA_net<-OBA_net[,1:2]
 
