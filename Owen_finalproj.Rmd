@@ -36,6 +36,7 @@ OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
 OBA<-subset(OBA, Genus!="" & Associated.plant...genus..species!= "" & Associated.plant...genus..species!= "NA")
 OBA<-unite(OBA, col="gspecies", c('Genus', 'Species'), sep=' ', remove=FALSE)
 OBA$plantresolution<-str_detect(OBA$Associated.plant...genus..species, pattern="\\w\\s\\w")
+OBA$plant.genus<-str_split_fixed(OBA$Associated.plant...genus..species, "\\s",n=2)[,1]
 
 
 
@@ -102,6 +103,10 @@ levels(vegcover)<-fromto_df
 #reproj vegcover
 vegcover_reproj<-project(vegcover, crs(OBA_crop))
 
+#extract vegcovertypes at each OBA sample
+vegbee_master<- terra::extract(x=vegcover_reproj, y=OBA_crop)
+
+
 
 
 ```
@@ -155,10 +160,9 @@ ggsave(
 
 ```{r}
 #longitude:
-x<--123.285
-
+x<--122.71801732709334
 #latitude:
-y<-44.556
+y<-43.90434
 ```
 
 # What is the Vegetation Type?
@@ -196,7 +200,7 @@ genuslist<-OBA_onetype %>% group_by(Genus) %>% tally()
 genuslist<-genuslist[order(genuslist$n, decreasing = TRUE),1:2]
 genuslist
 
-ggplot(data =genuslist[1:10,], aes(x=reorder(Genus, -n), y=n, fill =Genus)) +
+ggplot(data =genuslist[1:pmax(length(genuslist),10),], aes(x=reorder(Genus, -n), y=n, fill =Genus)) +
   geom_bar(stat='identity',show.legend = FALSE)+
   ggtitle("Most Common Bee Genera") +
   xlab("") +
@@ -212,15 +216,15 @@ ggplot(data =genuslist[1:10,], aes(x=reorder(Genus, -n), y=n, fill =Genus)) +
 ## Bee species of interest
 
 ```{r}
-subset(OBA_onetype, plantresolution == TRUE)
+OBA_onetype_beespecies<-subset(OBA_onetype, Species != "")
 
-specieslist<-OBA_onetype %>% group_by(gspecies) %>% tally()
+specieslist<-OBA_onetype_beespecies %>% group_by(gspecies) %>% tally()
 specieslist<-specieslist[order(specieslist$n, decreasing = TRUE),1:2]
 specieslist[1:25,]
 
-ggplot(data =specieslist[1:25,], aes(x=reorder(gspecies, -n), y=n, fill =gspecies)) +
+ggplot(data =specieslist[1:pmax(length(specieslist),25),], aes(x=reorder(gspecies, -n), y=n, fill =gspecies)) +
   geom_bar(stat='identity',show.legend = FALSE)+
-  ggtitle("Most Common Bee species") +
+  ggtitle("Most Common Bee Species") +
   xlab("") +
   ylab("# of Observations") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -229,13 +233,38 @@ ggplot(data =specieslist[1:25,], aes(x=reorder(gspecies, -n), y=n, fill =gspecie
 
 ```
 
+## Most Abundant Associated Plant Genera
+
+```{r}
+#split into genus column
+#OBA_onetype$plant.genus<-str_split_fixed(OBA_onetype$Associated.plant...genus..species, "\\s",n=2)[,1]
+
+plantlist_g<-OBA_onetype %>% group_by(plant.genus) %>% tally()
+plantlist_g<-plantlist_g[order(plantlist_g$n, decreasing = TRUE),1:2]
+
+ggplot(data =plantlist_g[1:pmax(length(plantlist_g$plant.genus),20),], aes(x=reorder(plant.genus, -n), y=n, fill =plant.genus)) +
+  geom_bar(stat='identity',show.legend = FALSE)+
+  ggtitle("Most Common Pollinator Associated Plant Genera") +
+  xlab("") +
+  ylab("# of Associated Bee Observations") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        plot.title = element_text(size=10)) +
+  scale_color_brewer()
+
+
+```
+
 ## Most Abundant Associated Plant Species
 
 ```{r}
-plantlist<-OBA_onetype %>% group_by(Associated.plant...genus..species) %>% tally()
+OBA_onetype_plantspecies<-subset(OBA_onetype, plantresolution == TRUE)
+
+
+
+plantlist<-OBA_onetype_plantspecies %>% group_by(Associated.plant...genus..species) %>% tally()
 plantlist<-plantlist[order(plantlist$n, decreasing = TRUE),1:2]
 
-ggplot(data =plantlist[1:25,], aes(x=reorder(Associated.plant...genus..species, -n), y=n, fill =Associated.plant...genus..species)) +
+ggplot(data =plantlist[1:pmax(length(plantlist$Associated.plant...genus..species),25),], aes(x=reorder(Associated.plant...genus..species, -n), y=n, fill =Associated.plant...genus..species)) +
   geom_bar(stat='identity',show.legend = FALSE)+
   ggtitle("Most Common Pollinator Associated Plants") +
   xlab("") +
@@ -246,14 +275,44 @@ ggplot(data =plantlist[1:25,], aes(x=reorder(Associated.plant...genus..species, 
 
 ```
 
+## Most Diverse Associated Plant Genera
+
+```{r}
+#remove any bee species only identified to genus
+OBA_onetype_plantgenus_d<-subset(OBA_onetype, plantresolution == TRUE & Species != "")
+
+allplants_g<-as.data.frame(unique(OBA_onetype_plantgenus_d$plant.genus))
+colnames(allplants_g)<-"plant"
+allplants_g$uniquebeespecies = NA
+for (a in 1:nrow(allplants_g)) {
+    oneplantsubset_g<-subset(OBA_onetype_plantspecies_d, plant.genus == allplants_g[a,1])
+    allplants_g[a,2]<-length(unique(oneplantsubset_g$gspecies))
+}
+
+
+ggplot(data =allplants_g[1:pmax(length(allplants_g),25),], aes(x=reorder(plant, -uniquebeespecies), y=uniquebeespecies, fill =plant)) +
+  geom_bar(stat='identity',show.legend = FALSE)+
+  ggtitle("Plants With Most Pollinator Diversity") +
+  xlab("") +
+  ylab("# of Unique Associated Bee Species") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        plot.title = element_text(size=10)) +
+  scale_color_brewer()
+
+
+```
+
 ## Most Diverse Associated Plant Species
 
 ```{r}
-allplants<-as.data.frame(unique(OBA_onetype$Associated.plant...genus..species))
+# like the last one + remove any bee specimens only identified to genus
+OBA_onetype_plantspecies_d<-subset(OBA_onetype, plantresolution == TRUE & Species != "")
+
+allplants<-as.data.frame(unique(OBA_onetype_plantspecies_d$Associated.plant...genus..species))
 colnames(allplants)<-"plant"
 allplants$uniquebeespecies = NA
 for (a in 1:nrow(allplants)) {
-    oneplantsubset<-subset(OBA_onetype, Associated.plant...genus..species == allplants[a,1])
+    oneplantsubset<-subset(OBA_onetype_plantspecies_d, Associated.plant...genus..species == allplants[a,1])
     allplants[a,2]<-length(unique(oneplantsubset$gspecies))
 }
 
