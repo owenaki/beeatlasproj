@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 An observed global decline in pollinators has placed special attention on bees in recent decades, especially in the pacific northwest region, where native bee species such as Bombus occidentalis have declined as much as 90% (Graves et al. 2020). Initiatives like the Oregon Bee Atlas(OBA) aim to survey local bees, identifying bees and the associated plants that they are foraging on. As pollinator function declines along with bee abundance (Burkle et al. 2013), this dataset presents a way to not only catalog bee diversity and abundance, but to also examine plant-pollinator interactions and their place in larger ecological networks.
 
-One of the largest applications of the OBA is its utilization by land managers. Recently there has been pressure from both agricultural and public land agencies to protect pollinators. A U.S. Forest Service report on \"Pollinator-Friendly Best Management Practices for Federal Lands\" advises land managers to work with their local pollinator conservation initiatives to decide which bee populations to monitor, which native species to plant, and how to avoid harming pollinators during other projects (USFS 2015). Having a strong diversity of pollinators in an area benefits natural and agricultural ecosystems, and improves both environmental health and human welfare (Katumo et al. 2022). To start working towards these BMPs and facilitation of pollinator habitat, land managers need to answer some questions: 
+One of the largest applications of the OBA is its utilization by land managers. Recently there has been pressure from both agricultural and public land agencies to protect pollinators. A U.S. Forest Service report on "Pollinator-Friendly Best Management Practices for Federal Lands" advises land managers to work with their local pollinator conservation initiatives to decide which bee populations to monitor, which native species to plant, and how to avoid harming pollinators during other projects (USFS 2015). Having a strong diversity of pollinators in an area benefits natural and agricultural ecosystems, and improves both environmental health and human welfare (Katumo et al. 2022). To start working towards these BMPs and facilitation of pollinator habitat, land managers need to answer some questions: 
 
 -   What kinds of bees are most common in my area
 
@@ -20,9 +20,9 @@ One of the largest applications of the OBA is its utilization by land managers. 
 
 -   Which plant species serve which species of bee?
 
-The Oregon Bee Atlas has the capacity to answer some of these questions and to deliver the benefits of a healthy pollinator community. The Oregon Department of Agriculture provides a guide to \"Common Bee Pollinators of Oregon Crops,\" however, the guide is static, last revised in 2017, and focuses on commercial crops as opposed to the wild-growing and native plants that are detailed in the OBA dataset (Kincaid 2017). The Oregon Bee Atlas is location based and can provide valuable info on networks that can increase resiliency and diversity. Pollination networks can be quite complex, and the specificity of the OBA dataset might give managers a better idea of what species to focus on compared to more general initiatives to increase native foliage. 
+The Oregon Bee Atlas has the capacity to answer some of these questions and to deliver the benefits of a healthy pollinator community. The Oregon Department of Agriculture provides a guide to "Common Bee Pollinators of Oregon Crops," however, the guide is static, last revised in 2017, and focuses on commercial crops as opposed to the wild-growing and native plants that are detailed in the OBA dataset (Kincaid 2017). The Oregon Bee Atlas is location based and can provide valuable info on networks that can increase resiliency and diversity. Pollination networks can be quite complex, and the specificity of the OBA dataset might give managers a better idea of what species to focus on compared to more general initiatives to increase native foliage. 
 
-While the Oregon Bee Atlas has been a success in sampling effort since 2018, the dataset is large, and data visualization/interpretation efforts are still ongoing within the program. It isn\'t easy to download the OBA data and immediately have the local pollinator knowledge mentioned in that USFS report. Trends across all of Oregon won't apply to specific areas of land, and only looking at one bee or plant might not give land managers the whole picture. To effectively answer our questions, There needs to be a way to quickly get and visualize relevant OBA data to inform land managers of the important interactions that might be happening on their land.
+While the Oregon Bee Atlas has been a success in sampling effort since 2018, the dataset is large, and data visualization/interpretation efforts are still ongoing within the program. It isn't easy to download the OBA data and immediately have the local pollinator knowledge mentioned in that USFS report. Trends across all of Oregon won't apply to specific areas of land, and only looking at one bee or plant might not give land managers the whole picture. To effectively answer our questions, There needs to be a way to quickly get and visualize relevant OBA data to inform land managers of the important interactions that might be happening on their land.
 
 The purpose of this project is to give land managers (or gardeners or farmers or researchers etc.) a tool to efficiently parse and present OBA data that is relevant to the land that they are managing, by integrating vegetation/ecosystem land cover datasets into the OBA data.
 
@@ -189,6 +189,8 @@ ggsave(
 
          
 ```
+
+# The Tool Begins Here:
 
 # Input Coordinates
 
@@ -393,11 +395,13 @@ mybeenetworkplot
 
 
   ggsave('mybeenetworkplot.pdf', 
-        width = unit(20, 'in'), height = unit(60, 'in'), limitsize=FALSE)
+        width = unit(20, 'in'), height = unit(100, 'in'), limitsize=FALSE)
   
 ```
 
 # Conclusions
+
+With our example run of this tool, a hypothetical land manager in the Malheur National Forest will be able to see that their land is classified as Columbia Plateau Low Sagebrush Steppe, and will be able to access the NatureServe explorer information on this vegetation type. They probably already know this, but this will assure them that the tool is working correctly, and will inform them where their OBA data is coming from. They will see that *Anthropora urbana* and *Bombus huntii* are the most common bee species in this ecosystem, and that there is a high frequency of the *Lasioglossum* Genus. They will find that *Chrysothamnus viscidiflorus*, *Ericameria nauseosa*, *Cirsium vulgare*, and *Apocynum androsaemifolium* are the most commonly visited plants in their area, and that while *Ericameria nauseosa* serves more bees, *Cirsium vulgare* provides for a larger diversity of species. From the alluvial plot, it seems that *Ericameria* serves mostly *Anthrapora* and *Halictus*, explaining the difference in diversity. The network also reveals that much of the frequency of *Lasioglossum* is linked to *Apocynum androsaemifolium*. The land manager would know that any problems with their *Apocynum androsaemifolium* population would likely affect the *Lasioglossum* population as well. Conversly, if the land manger wanted to increase *Bombus* populations, *Eriogonum sphaerocephalum* might be the plant to focus on. Now the land manger has not only reached these important conclusions, but has a handy subset of OBA data that they can further analyze should more specific questions come up.
 
 # Appendix
 
