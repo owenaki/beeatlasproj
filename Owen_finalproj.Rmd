@@ -160,10 +160,10 @@ ggsave(
 
 ```{r}
 #longitude:
-x<--117.17
+x<--122.079
 
 #latitude:
-y<-42.547
+y<-44.328
 ```
 
 # What is the Vegetation Type?
@@ -295,7 +295,7 @@ for (a in 1:nrow(allplants_g)) {
 
 ggplot(data =allplants_g[1:pmin(length(allplants_g$plant),25),], aes(x=reorder(plant, -uniquebeespecies), y=uniquebeespecies, fill =plant)) +
   geom_bar(stat='identity',show.legend = FALSE)+
-  ggtitle("Plants With Most Pollinator Diversity") +
+  ggtitle("Plant Genera With Most Pollinator Diversity") +
   xlab("") +
   ylab("# of Unique Associated Bee Species") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -324,7 +324,7 @@ for (a in 1:nrow(allplants)) {
 
 ggplot(data =allplants[1:pmin(length(allplants$plant),25),], aes(x=reorder(plant, -uniquebeespecies), y=uniquebeespecies, fill =plant)) +
   geom_bar(stat='identity',show.legend = FALSE)+
-  ggtitle("Plants With Most Pollinator Diversity") +
+  ggtitle("Plant Species With Most Pollinator Diversity") +
   xlab("") +
   ylab("# of Unique Associated Bee Species") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -337,7 +337,7 @@ ggplot(data =allplants[1:pmin(length(allplants$plant),25),], aes(x=reorder(plant
 
 ```{r}
 
-pdf("greasyplot.pdf")
+pdf("mybeenetworkplot.pdf")
 
 mybeenetworkplot<-ggplot(data = OBA_onetype,
        aes(axis1 = Associated.plant...genus..species, axis2 = gspecies,)) +
@@ -382,6 +382,14 @@ plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
 
 bipartite_projection(OBA_netgraph)
 
+#for prezi
 vegcover_greasewood<- vegcover_reproj =="Inter-Mountain Basins Greasewood Flat"
 plot(vegcover_greasewood)
+plot(OBA_onetype_sf, add=TRUE)
+
+
+ggplot()+
+  geom_spatraster(data=vegcover_greasewood) +
+  geom_sf(data=OBA_onetype_sf, color='yellow2')
+  
 ```
