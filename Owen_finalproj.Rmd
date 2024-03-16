@@ -1,5 +1,5 @@
 ---
-title: "Owen_finalproj"
+title: "Pollination Data for Land Managers: A tool to make the Oregon Bee Atlas more accessible"
 output:
   pdf_document: default
   html_document: default
@@ -393,12 +393,21 @@ mybeenetworkplot<-ggplot(data = OBA_onetype,
   scale_x_discrete(limits = c("Associated.plant...genus..species", "gspecies"),
                    expand = c(0.15, 0.05)) +
   theme_void()
-mybeenetworkplot
 
 
-  ggsave('mybeenetworkplot.pdf', 
-        width = unit(20, 'in'), height = unit(100, 'in'), limitsize=FALSE)
+
+ggsave('mybeenetworkplot.pdf', width = unit(20, 'in'), height = unit(100, 'in'), limitsize=FALSE)
   
+#getting bug where it wont display plot if stored in variable, so had to do this twice
+ggplot(data = OBA_onetype,
+       aes(axis1 = Associated.plant...genus..species, axis2 = gspecies,)) +
+  geom_alluvium(aes(fill = Associated.plant...genus..species),show.legend = FALSE, ) +
+  geom_stratum() +
+  geom_label(stat = "stratum",
+            aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c("Associated.plant...genus..species", "gspecies"),
+                   expand = c(0.15, 0.05)) +
+  theme_void()
 ```
 
 # Conclusions
