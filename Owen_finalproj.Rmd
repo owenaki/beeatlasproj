@@ -8,6 +8,32 @@ date: "2024-01-26"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Introduction
+
+An observed global decline in pollinators has placed special attention on bees in recent decades, especially in the pacific northwest region, where native bee species such as Bombus occidentalis have declined as much as 90% (Graves et al. 2020). Initiatives like the Oregon Bee Atlas(OBA) aim to survey local bees, identifying bees and the associated plants that they are foraging on. As pollinator function declines along with bee abundance (Burkle et al. 2013), this dataset presents a way to not only catalog bee diversity and abundance, but to also examine plant-pollinator interactions and their place in larger ecological networks.
+
+One of the largest applications of the OBA is its utilization by land managers. Recently there has been pressure from both agricultural and public land agencies to protect pollinators. A U.S. Forest Service report on \"Pollinator-Friendly Best Management Practices for Federal Lands\" advises land managers to work with their local pollinator conservation initiatives to decide which bee populations to monitor, which native species to plant, and how to avoid harming pollinators during other projects (USFS 2015). Having a strong diversity of pollinators in an area benefits natural and agricultural ecosystems, and improves both environmental health and human welfare (Katumo et al. 2022). To start working towards these BMPs and facilitation of pollinator habitat, land managers need to answer some questions: 
+
+-   What kinds of bees are most common in my area
+
+-   Which plant species serve the most bees/bee species in my area?
+
+-   Which plant species serve which species of bee?
+
+The Oregon Bee Atlas has the capacity to answer some of these questions and to deliver the benefits of a healthy pollinator community. The Oregon Department of Agriculture provides a guide to \"Common Bee Pollinators of Oregon Crops,\" however, the guide is static, last revised in 2017, and focuses on commercial crops as opposed to the wild-growing and native plants that are detailed in the OBA dataset (Kincaid 2017). The Oregon Bee Atlas is location based and can provide valuable info on networks that can increase resiliency and diversity. Pollination networks can be quite complex, and the specificity of the OBA dataset might give managers a better idea of what species to focus on compared to more general initiatives to increase native foliage. 
+
+While the Oregon Bee Atlas has been a success in sampling effort since 2018, the dataset is large, and data visualization/interpretation efforts are still ongoing within the program. It isn\'t easy to download the OBA data and immediately have the local pollinator knowledge mentioned in that USFS report. Trends across all of Oregon won't apply to specific areas of land, and only looking at one bee or plant might not give land managers the whole picture. To effectively answer our questions, There needs to be a way to quickly get and visualize relevant OBA data to inform land managers of the important interactions that might be happening on their land.
+
+The purpose of this project is to give land managers (or gardeners or farmers or researchers etc.) a tool to efficiently parse and present OBA data that is relevant to the land that they are managing, by integrating vegetation/ecosystem land cover datasets into the OBA data.
+
+# Data
+
+I used the Oregon Bee Atlas 2018-2023 dataset, and NatureServe's U.S. vegetation cover dataset :
+
+<https://www.natureserve.org/products/terrestrial-ecological-systems-united-states>
+
+The OBA dataset is in csv format and was used as a matrix/dataframe, in addition to being converted into network data and shapefile data. The NatureServe dataset provided a raster. I downloaded the state-specific .tif for Oregon, which was a numerical raster with numbers representing vegetation types. I had to convert it to a categorical raster using an accompanying attributes file, shown in the "Raster Setup" chunk.
+
 # Packages
 
 ```{r}
@@ -31,9 +57,13 @@ library(stringr)
 
 ```{r}
 OBAraw<-read.csv("Akiyama_ProjectData/OBA_2018-2023.csv")
+#remove bees with no location
 OBA<-subset(OBAraw, Dec..Long. != "" & Dec..Lat. != "")
+#subset to Oregon
 OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
+# remove unidentified plants and bees
 OBA<-subset(OBA, Genus!="" & Associated.plant...genus..species!= "" & Associated.plant...genus..species!= "NA")
+
 OBA<-unite(OBA, col="gspecies", c('Genus', 'Species'), sep=' ', remove=FALSE)
 OBA$plantresolution<-str_detect(OBA$Associated.plant...genus..species, pattern="\\w\\s\\w")
 OBA$plant.genus<-str_split_fixed(OBA$Associated.plant...genus..species, "\\s",n=2)[,1]
@@ -393,3 +423,17 @@ ggplot()+
   geom_sf(data=OBA_onetype_sf, color='yellow2')
   
 ```
+
+# Bibliography
+
+Graves, T. A., W. M. Janousek, S. M. Gaulke, A. C. Nicholas, D. A. Keinath, C. M. Bell, S. Cannings, R. G. Hatfield, J. M. Heron, J. B. Koch, H. L. Loffland, L. L. Richardson, A. T. Rohde, J. Rykken, J. P. Strange, L. M. Tronstad, and C. S. Sheffield. 2020. Western bumble bee: declines in the continental United States and range-wide information gaps. Ecosphere 11(6):e03141. [10.1002/ecs2.3141](https://doi.org/10.1002/ecs2.3141)
+
+Burkle, L. A., Marlin, J. C. & Knight, T. M. Plant-pollinator interactions over 120 years: loss of species, co-occurrence, and function. 2013. Science339, 1611--1615 .
+
+Katumo DM, Liang H, Ochola AC, Lv M, Wang QF, Yang CF. 2022. Pollinator diversity benefits natural and agricultural ecosystems, environmental health, and human welfare. Plant Divers. Feb 3;44(5):429-435. doi: 10.1016/j.pld.2022.01.005. PMID: 36187551; PMCID: PMC9512639
+
+United States Department of Agriculture, Forest Service. 2015. Pollinator-Friendly Best Management Practices for Federal Lands. Retrieved from <https://www.fs.usda.gov/wildflowers/pollinators/BMPs/documents/PollinatorFriendlyBMPsFederalLands05152015.pdf>
+
+Sarah Kincaid. 2017. Common Bee Pollinators of Oregon Crops. Salem, OR; Oregon Department of Agriculture. 
+
+Pokorny, K. 2023. The debate over native plants and their cultivars gathers steam. OSU Extension Service. Retrieved from <https://extension.oregonstate.edu/news/debate-over-native-plants-their-cultivars-gathers-steam> 
