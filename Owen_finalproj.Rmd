@@ -63,9 +63,11 @@ OBA<-subset(OBAraw, Dec..Long. != "" & Dec..Lat. != "")
 OBA<-subset(OBA, State=="OR" | State== "Oregon" | State== "Oregon ")
 # remove unidentified plants and bees
 OBA<-subset(OBA, Genus!="" & Associated.plant...genus..species!= "" & Associated.plant...genus..species!= "NA")
-
+# make column with bee genus and species
 OBA<-unite(OBA, col="gspecies", c('Genus', 'Species'), sep=' ', remove=FALSE)
+# make way to identify the resolution of plant taxa
 OBA$plantresolution<-str_detect(OBA$Associated.plant...genus..species, pattern="\\w\\s\\w")
+# create seperate column for only plant genera
 OBA$plant.genus<-str_split_fixed(OBA$Associated.plant...genus..species, "\\s",n=2)[,1]
 
 
@@ -76,21 +78,23 @@ OBA$plant.genus<-str_split_fixed(OBA$Associated.plant...genus..species, "\\s",n=
 # Shapefile Setup:
 
 ```{r}
+#convert to shapefile
 OBA_sf <- st_as_sf(OBA, coords = c("Dec..Long.", "Dec..Lat."),
                                   crs = 4326)
+#oregon basemap
 or <- map_data( "state","oregon") %>% 
   dplyr::select(lon = long, lat, group, id = subregion)
 
+#convert to polygon spatial object
 or_poly <- or %>%
   st_as_sf(coords=c("lon","lat"), crs=4326)%>%
   summarise(geometry = st_combine(geometry)) %>%
   st_cast("POLYGON")
 
+# crop OBA data to oregon basemap
 OBA_crop<-st_filter(OBA_sf,or_poly)
 
-#possibly unecessary
-#or_sf<-st_as_sf(or, coords=c("lon","lat"),, group=TRUE, crs=4326)
-
+# check shapefile
 ggplot()+
   geom_polygon(data=or, aes(x=lon,y=lat, group=group)) +
   geom_sf(data=OBA_crop, color='yellow') 
@@ -99,6 +103,7 @@ ggplot()+
 # Raster Setup
 
 ```{r}
+#read raster
 vegcover<-rast("Akiyama_ProjectData/gaplf2011lc_v30_or/gaplf2011lc_v30_or.tif")
 #attributes
 vegcover_at<-read.delim("Akiyama_ProjectData/gaplf2011lc_v30_or/GAP_LANDFIRE_National_Terrestrial_Ecosystems_2011_Attributes.txt")
@@ -144,7 +149,7 @@ vegbee_master<- terra::extract(x=vegcover_reproj, y=OBA_crop)
 # Raster Graph
 
 ```{r}
-## Regular R raster plot:
+## plot just vegetation cover
 
 #plot(vegcover,type= "classes",legend=TRUE,plg=list(
 #                title = "Terrestrial Ecosystem Type",
@@ -152,7 +157,6 @@ vegbee_master<- terra::extract(x=vegcover_reproj, y=OBA_crop)
 #                cex = 0.14), fun=\() lines(or))
 
 
-##THIS GRAPH LOOKS HORRIBLE
 pdf("vegcoverplot3.pdf")
 vegcoverplot<-ggplot()+
   geom_spatraster(data=vegcover_reproj) +
@@ -161,7 +165,7 @@ vegcoverplot<-ggplot()+
   ggtitle("NatureServe Vegetation Cover in Oregon") +
   annotation_scale(height = unit(3, "cm"),   text_cex = 3) +
   theme(plot.title = element_text(size=70),
-        legend.position= "right",
+        legend.position= "bottom",
         legend.text = element_text(size=30),
         legend.title = element_text(size=50),
         plot.caption = element_text(size=50),
@@ -189,34 +193,38 @@ ggsave(
 # Input Coordinates
 
 ```{r}
+From within the Malheur National Forrest
 #longitude:
-x<--122.079
+x<--118.6706
 
 #latitude:
-y<-44.328
+y<-44.0509
 ```
 
 # What is the Vegetation Type?
 
 ```{r}
-
+#make coordinate readable
 onecoord<-as.data.frame(matrix(c(y,x),nrow=1,ncol=2)) 
 colnames(onecoord)<-c("lat","lon") 
 onecoord_sf <- st_as_sf(onecoord, coords = c("lon","lat"), crs = 4326) 
+#extract veg cover at that coordinate
 onevegtype<-terra::extract(x=vegcover_reproj, y=onecoord_sf) 
 onevegtype<-as.data.frame(onevegtype)[1,2]
+#extract all OBA observations from within that vegetation type
 OBA_onetype_sf<-OBA_crop[which(vegbee_master$to == onevegtype),] 
 OBA_onetype<-as.data.frame(OBA_onetype_sf)
+
 
 sprintf("This point is within %s vegetation cover",onevegtype)
 
 
-#a function that doesn't work #toplist <- function(x){ # funclist<-OBA_onetype %>% group_by (x) %>% tally() # funclist<-random[order(funclist$n, decreasing = TRUE),1:2] #return(funclist) }
 ```
 
 # Get Vegetation Type Info
 
 ```{r}
+#convert vegetation type into specific google search of natureserve explorer site
 URL<-gsub(" ","+",onevegtype)
 URL<-sprintf("https://www.google.com/search?q=%s+site%%3Ahttps%%3A%%2F%%2Fexplorer.natureserve.org",URL)
 browseURL(URL)
@@ -227,6 +235,7 @@ browseURL(URL)
 ## Bee genera of interest
 
 ```{r}
+# count all instances of genera
 genuslist<-OBA_onetype %>% group_by(Genus) %>% tally()
 genuslist<-genuslist[order(genuslist$n, decreasing = TRUE),1:2]
 genuslist
@@ -247,8 +256,10 @@ ggplot(data =genuslist[1:pmin(length(genuslist$Genus),10),], aes(x=reorder(Genus
 ## Bee species of interest
 
 ```{r}
+#remove bees with no species level ID
 OBA_onetype_beespecies<-subset(OBA_onetype, Species != "")
 
+#count all instances of species
 specieslist<-OBA_onetype_beespecies %>% group_by(gspecies) %>% tally()
 specieslist<-specieslist[order(specieslist$n, decreasing = TRUE),1:2]
 specieslist[1:25,]
@@ -267,9 +278,7 @@ ggplot(data =specieslist[1:pmin(length(specieslist$gspecies),25),], aes(x=reorde
 ## Most Abundant Associated Plant Genera
 
 ```{r}
-#split into genus column
-#OBA_onetype$plant.genus<-str_split_fixed(OBA_onetype$Associated.plant...genus..species, "\\s",n=2)[,1]
-
+#count all instances of genera
 plantlist_g<-OBA_onetype %>% group_by(plant.genus) %>% tally()
 plantlist_g<-plantlist_g[order(plantlist_g$n, decreasing = TRUE),1:2]
 
@@ -288,10 +297,11 @@ ggplot(data =plantlist_g[1:pmin(length(plantlist_g$plant.genus),20),], aes(x=reo
 ## Most Abundant Associated Plant Species
 
 ```{r}
+#only get plants identified to species level
 OBA_onetype_plantspecies<-subset(OBA_onetype, plantresolution == TRUE)
 
-# & Species != ""
 
+# count instances
 plantlist<-OBA_onetype_plantspecies %>% group_by(Associated.plant...genus..species) %>% tally()
 plantlist<-plantlist[order(plantlist$n, decreasing = TRUE),1:2]
 
@@ -309,14 +319,15 @@ ggplot(data =plantlist[1:pmin(length(plantlist$Associated.plant...genus..species
 ## Most Diverse Associated Plant Genera
 
 ```{r}
-#remove any bee species only identified to genus
+#remove any plant species only identified to genus
 OBA_onetype_plantgenus_d<-subset(OBA_onetype, plantresolution == TRUE )
 
-# & Species != ""
-
+# get a dataframe of unique plants
 allplants_g<-as.data.frame(unique(OBA_onetype_plantgenus_d$plant.genus))
 colnames(allplants_g)<-"plant"
+#setup column
 allplants_g$uniquebeespecies = NA
+# for loop where each unique plant gets # of unique bee species counted
 for (a in 1:nrow(allplants_g)) {
     oneplantsubset_g<-subset(OBA_onetype_plantgenus_d, plant.genus == allplants_g[a,1])
     allplants_g[a,2]<-length(unique(oneplantsubset_g$gspecies))
@@ -339,9 +350,7 @@ ggplot(data =allplants_g[1:pmin(length(allplants_g$plant),25),], aes(x=reorder(p
 
 ```{r}
 # like the last one + remove any bee specimens only identified to genus
-OBA_onetype_plantspecies_d<-subset(OBA_onetype, plantresolution == TRUE )
-
-#& Species != ""
+OBA_onetype_plantspecies_d<-subset(OBA_onetype, plantresolution == TRUE & Species != "")
 
 allplants<-as.data.frame(unique(OBA_onetype_plantspecies_d$Associated.plant...genus..species))
 colnames(allplants)<-"plant"
@@ -369,6 +378,8 @@ ggplot(data =allplants[1:pmin(length(allplants$plant),25),], aes(x=reorder(plant
 
 pdf("mybeenetworkplot.pdf")
 
+#I was able to pull network from dataframe alone by putting it into this plot
+
 mybeenetworkplot<-ggplot(data = OBA_onetype,
        aes(axis1 = Associated.plant...genus..species, axis2 = gspecies,)) +
   geom_alluvium(aes(fill = Associated.plant...genus..species),show.legend = FALSE, ) +
@@ -382,10 +393,11 @@ mybeenetworkplot
 
 
   ggsave('mybeenetworkplot.pdf', 
-        width = unit(25, 'in'), height = unit(30, 'in'))
+        width = unit(20, 'in'), height = unit(60, 'in'), limitsize=FALSE)
+  
 ```
 
-# 
+# Conclusions
 
 # Appendix
 
@@ -411,7 +423,12 @@ plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
 
 
 bipartite_projection(OBA_netgraph)
+  
+```
 
+## Greasewood Flat Raster Exploration for Presentation
+
+```{r}
 #for prezi
 vegcover_greasewood<- vegcover_reproj =="Inter-Mountain Basins Greasewood Flat"
 plot(vegcover_greasewood)
@@ -421,7 +438,6 @@ plot(OBA_onetype_sf, add=TRUE)
 ggplot()+
   geom_spatraster(data=vegcover_greasewood) +
   geom_sf(data=OBA_onetype_sf, color='yellow2')
-  
 ```
 
 # Bibliography
