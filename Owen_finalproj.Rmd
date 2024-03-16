@@ -1,6 +1,8 @@
 ---
 title: "Owen_finalproj"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: "2024-01-26"
 ---
 
@@ -195,7 +197,7 @@ ggsave(
 # Input Coordinates
 
 ```{r}
-From within the Malheur National Forrest
+#From within the Malheur National Forest
 #longitude:
 x<--118.6706
 
@@ -408,25 +410,24 @@ With our example run of this tool, a hypothetical land manager in the Malheur Na
 ### Unused igraph network code
 
 ```{r}
-OBA_net<-subset(OBA_onetype, select= c(gspecies, Associated.plant))
+OBA_net<-subset(OBA_onetype, select= c(gspecies, Associated.plant...genus..species))
 OBA_net<-as.data.frame(OBA_net)
 OBA_net<-OBA_net[,1:2]
 
 OBA_netvert<-distinct(gather(OBA_net))
 OBA_netvert<-OBA_netvert[,c(2,1)]
-OBA_netvert<-OBA_netvert$key ==
-  OBA_netvert['key'][OBA_netvert['key'] == 'gspecies']<- 'TRUE'
+OBA_netvert['key'][OBA_netvert['key'] == 'gspecies']<- 'TRUE'
+#something went wrong here
 
-
-OBA_netvert$type<-as.logical(ifelse(OBA_netvert$key == "gspecies","TRUE","FALSE"))
+#OBA_netvert$type<-as.logical(ifelse(OBA_netvert$key == "gspecies","TRUE","FALSE"))
  
-OBA_netgraph <- graph_from_data_frame(OBA_net, directed=FALSE, vertices=OBA_netvert)
+#OBA_netgraph <- graph_from_data_frame(OBA_net, directed=FALSE, vertices=OBA_netvert)
 
-plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
-     vertex.label.cex=0.1, hgap=5000, vgap= 20)
+#plot(OBA_netgraph, layout=layout.bipartite, weighted=TRUE, vertex.size=0.5,
+     #vertex.label.cex=0.1, hgap=5000, vgap= 20)
 
 
-bipartite_projection(OBA_netgraph)
+#bipartite_projection(OBA_netgraph)
   
 ```
 
